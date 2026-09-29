@@ -11,7 +11,7 @@
   html { background: #000; }
   body {
     margin: 0; min-height: 100vh; min-height: 100dvh;
-    display: flex; background: #000;
+    display: flex; flex-direction: column; background: #000;
     padding: 16px; font-family: "Courier New", Courier, monospace;
   }
   .win {
@@ -26,9 +26,9 @@
   }
   .brand { display: flex; align-items: center; gap: 8px; min-width: 0; }
   .brand img { height: 18px; width: auto; display: block; }
-  .right { display: flex; align-items: center; gap: 16px; }
-  .mascot { color: #000; text-decoration: underline; }
-  .mascot:focus-visible { outline: 1px dashed #000; outline-offset: 2px; }
+  .top { align-self: flex-end; margin-bottom: 12px; }
+  .mascot { color: var(--green); text-decoration: underline; }
+  .mascot:focus-visible { outline: 1px dashed var(--green); outline-offset: 3px; }
   .ctl { letter-spacing: 0.15em; white-space: nowrap; }
   .body { padding: 16px; color: var(--green); font-size: 15px; line-height: 1.5; }
 
@@ -98,8 +98,9 @@
 </style>
 </head>
 <body>
+  <div class="top"><a class="mascot" href="https://bleepbloopai.github.io/rok/#about" target="_blank" rel="noopener">mascot</a></div>
   <div class="win">
-    <div class="bar"><span class="brand"><img src="New%20Project.png" alt="" onerror="this.remove()"><span>AI IMAGE GENERATOR</span></span><span class="right"><a class="mascot" href="https://bleepbloopai.github.io/rok/#about" target="_blank" rel="noopener">mascot</a><span class="ctl" aria-hidden="true">&mdash; &#9633; X</span></span></div>
+    <div class="bar"><span class="brand"><img src="New%20Project.png" alt="" onerror="this.remove()"><span>AI IMAGE GENERATOR</span></span><span class="ctl" aria-hidden="true">&mdash; &#9633; X</span></div>
     <div class="body">
       <label class="lbl" for="p">PROMPT</label>
       <div class="box" id="pbox">
