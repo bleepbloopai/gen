@@ -62,13 +62,14 @@
   var btn = document.getElementById("go");
   var out = document.getElementById("out");
   var MODEL = "flux";
+  var PROXY = "https://snowy-recipe-2e51.bleepbloop-ai.workers.dev"; // paste your worker URL here
 
   function generate() {
     var prompt = input.value.trim();
     if (!prompt) { out.innerHTML = "<p>type a prompt first.</p>"; return; }
 
-    var url = "https://gen.pollinations.ai/image/" + encodeURIComponent(prompt) +
-              "?model=" + encodeURIComponent(MODEL) +
+    var url = PROXY + "/?prompt=" + encodeURIComponent(prompt) +
+              "&model=" + encodeURIComponent(MODEL) +
               "&seed=" + Math.floor(Math.random() * 1e6);
 
     btn.disabled = true;
