@@ -14,27 +14,35 @@
     padding: 16px; font-family: "Courier New", Courier, monospace;
   }
   .win {
-    width: 100%; max-width: 640px; margin: auto;
+    width: 100%; max-width: 720px; margin: auto;
     display: flex; flex-direction: column;
     background: #000; border: 1px solid #fff;
   }
   .bar {
+    display: flex; justify-content: space-between; gap: 12px;
     background: #fff; color: #000; padding: 6px 10px;
     font-size: 14px; font-weight: bold; flex: none;
   }
+  .ctl { letter-spacing: 0.15em; white-space: nowrap; }
   .body { padding: 16px; color: var(--green); font-size: 15px; line-height: 1.5; }
-  .row { display: flex; gap: 8px; align-items: flex-start; }
-  .row label { flex: none; }
-  input, textarea {
-    flex: 1; min-width: 0; background: transparent; border: 0; outline: 0;
+
+  .lbl { display: block; margin-bottom: 4px; }
+  .lbl + .box { margin-bottom: 14px; }
+  .box { border: 1px solid var(--green); padding: 8px 10px; }
+  .box:focus-within { outline: 1px dashed var(--green); outline-offset: 3px; }
+  .box.off { border-color: var(--dim); }
+  textarea {
+    width: 100%; display: block; resize: none; overflow: hidden;
+    overflow-wrap: anywhere; background: transparent; border: 0; outline: 0;
     color: var(--green); font: inherit; caret-color: var(--green); padding: 0;
     border-radius: 0;
   }
-  textarea { display: block; resize: none; overflow: hidden; overflow-wrap: anywhere; }
-  input::placeholder, textarea::placeholder { color: var(--dim); }
+  textarea::placeholder { color: var(--dim); }
+  textarea:disabled { color: var(--dim); }
+
   button {
     background: #000; color: var(--green);
-    border: 1px solid var(--green); font: inherit; padding: 4px 12px;
+    border: 1px solid var(--green); font: inherit; padding: 4px 14px;
     cursor: pointer; border-radius: 0;
   }
   button:hover:not(:disabled) { background: var(--green); color: #000; }
@@ -45,45 +53,120 @@
     font: inherit; padding: 4px 8px; border-radius: 0;
   }
   select:focus-visible { outline: 1px dashed var(--green); outline-offset: 3px; }
-  .actions { display: flex; gap: 8px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
-  #out { margin-top: 16px; }
+  select:disabled { color: var(--dim); border-color: var(--dim); }
+
+  .opts { display: flex; flex-wrap: wrap; gap: 12px 24px; }
+  .opt { display: flex; align-items: center; gap: 8px; }
+  .dims { margin: 8px 0 0; color: var(--dim); font-size: 14px; }
+  .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; margin-top: 14px; }
+
+  .divider { display: flex; align-items: center; gap: 12px; margin: 22px 0 16px; }
+  .divider::before, .divider::after { content: ""; flex: 1; border-top: 1px solid var(--green); }
+
   #out p { margin: 0 0 8px; overflow-wrap: anywhere; }
-  #out img { display: block; max-width: 100%; height: auto; border: 1px solid var(--green); }
   #out a { color: var(--green); }
-  .result { margin-bottom: 24px; }
-  .result:last-child { margin-bottom: 0; }
-  .links { margin-top: 8px; }
-  .savebar { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 16px; }
+  .grid.single { grid-template-columns: minmax(0, 1fr); }
+  .result img { display: block; width: 100%; height: auto; border: 1px solid var(--green); }
+  .cap { margin: 6px 0 0; }
+  .links { margin: 4px 0 0; }
+  .savebar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+
+  .progress { margin-bottom: 20px; }
+  .progress p { margin-bottom: 8px; }
+  .segs { display: flex; gap: 4px; }
+  .seg { flex: 1; height: 12px; border: 1px solid var(--green); }
+  .seg.done { background: var(--green); }
+  .seg.fail { border-style: dashed; border-color: var(--dim); }
+  .seg.active {
+    background: repeating-linear-gradient(90deg, var(--green) 0 8px, #000 8px 16px);
+    background-size: 16px 100%;
+    animation: slide 0.5s linear infinite;
+  }
+  @keyframes slide { to { background-position: 16px 0; } }
+  @media (prefers-reduced-motion: reduce) { .seg.active { animation: none; } }
+  @media (max-width: 480px) {
+    .grid { grid-template-columns: minmax(0, 1fr); }
+    .ctl { display: none; }
+  }
 </style>
 </head>
 <body>
   <div class="win">
-    <div class="bar">image generator</div>
+    <div class="bar"><span>AI IMAGE GENERATOR</span><span class="ctl" aria-hidden="true">&mdash; &#9633; X</span></div>
     <div class="body">
-      <div class="row">
-        <label for="p">&gt;</label>
+      <label class="lbl" for="p">PROMPT</label>
+      <div class="box" id="pbox">
         <textarea id="p" rows="1" placeholder="describe an image" autocomplete="off" spellcheck="false" autofocus></textarea>
       </div>
-      <div class="actions">
-        <button id="go">generate</button>
-        <select id="n" aria-label="number of images">
-          <option value="1">1 image</option>
-          <option value="2">2 images</option>
-          <option value="3">3 images</option>
-          <option value="4">4 images</option>
-        </select>
+
+      <label class="lbl" for="neg">LEAVE OUT (optional)</label>
+      <div class="box" id="nbox">
+        <textarea id="neg" rows="1" placeholder="things you don't want in the image" autocomplete="off" spellcheck="false"></textarea>
       </div>
+
+      <div class="opts">
+        <label class="opt">SIZE
+          <select id="size">
+            <option value="512">512</option>
+            <option value="768">768</option>
+            <option value="1024" selected>1024</option>
+          </select>
+        </label>
+        <label class="opt">RATIO
+          <select id="ratio">
+            <option value="1:1">1:1</option>
+            <option value="16:9">16:9</option>
+            <option value="9:16">9:16</option>
+            <option value="4:3">4:3</option>
+          </select>
+        </label>
+      </div>
+      <p class="dims" id="dims"></p>
+
+      <div class="actions">
+        <label class="opt">IMAGES:
+          <select id="n">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4" selected>4</option>
+          </select>
+        </label>
+        <button id="go">GENERATE</button>
+      </div>
+
+      <div class="divider">GENERATED IMAGES</div>
       <div id="out"></div>
     </div>
   </div>
 
 <script>
-  var input = document.getElementById("p");
-  var btn = document.getElementById("go");
-  var countSel = document.getElementById("n");
-  var out = document.getElementById("out");
-  var MODEL = "flux";
   var PROXY = "https://snowy-recipe-2e51.bleepbloop-ai.workers.dev"; // paste your worker URL here
+
+  var input = document.getElementById("p");
+  var negInput = document.getElementById("neg");
+  var sizeSel = document.getElementById("size");
+  var ratioSel = document.getElementById("ratio");
+  var countSel = document.getElementById("n");
+  var dimsEl = document.getElementById("dims");
+  var btn = document.getElementById("go");
+  var out = document.getElementById("out");
+  var controls = [input, negInput, sizeSel, ratioSel, countSel, btn];
+
+  // Size is the longer side. The other side follows the ratio, rounded to a multiple of 8.
+  function getDims() {
+    var long = parseInt(sizeSel.value, 10);
+    var parts = ratioSel.value.split(":");
+    var rw = parseInt(parts[0], 10), rh = parseInt(parts[1], 10);
+    var short = Math.round((long * Math.min(rw, rh) / Math.max(rw, rh)) / 8) * 8;
+    return rw >= rh ? { w: long, h: short } : { w: short, h: long };
+  }
+
+  function showDims() {
+    var d = getDims();
+    dimsEl.textContent = "output: " + d.w + " x " + d.h + " px";
+  }
 
   function fileName(text, ext) {
     var name = text.replace(/[\\/:*?"<>|\u0000-\u001f]/g, "").replace(/\s+/g, " ").trim().slice(0, 100).trim();
@@ -102,14 +185,15 @@
 
   function saveAs(img, original, ext, text) {
     var name = fileName(text, ext);
-    if (ext === "jpg") { download(original, name); return; }
+    var mime = ext === "jpg" ? "image/jpeg" : "image/" + ext;
+    if (original.type === mime) { download(original, name); return; }
     var c = document.createElement("canvas");
     c.width = img.naturalWidth;
     c.height = img.naturalHeight;
-    c.getContext("2d").drawImage(img, 0, 0);
-    c.toBlob(function (b) {
-      if (b) download(b, name);
-    }, "image/" + ext, 0.95);
+    var ctx = c.getContext("2d");
+    if (ext === "jpg") { ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height); }
+    ctx.drawImage(img, 0, 0);
+    c.toBlob(function (b) { if (b) download(b, name); }, mime, 0.95);
   }
 
   function loadImage(blob) {
@@ -122,11 +206,12 @@
     });
   }
 
-  // Requests one image and rejects with a message that says what actually went wrong.
-  function requestOne(prompt) {
+  // Requests one image. Rejects with a message that says what actually went wrong.
+  function requestOne(prompt, negative, dims) {
     var url = PROXY + "/?prompt=" + encodeURIComponent(prompt) +
-              "&model=" + encodeURIComponent(MODEL) +
+              "&width=" + dims.w + "&height=" + dims.h +
               "&seed=" + Math.floor(Math.random() * 1e6);
+    if (negative) url += "&negative=" + encodeURIComponent(negative);
 
     return fetch(url).then(function (r) {
       if (!r.ok) {
@@ -151,6 +236,13 @@
     res.img.alt = prompt;
     box.appendChild(res.img);
 
+    if (total > 1) {
+      var cap = document.createElement("p");
+      cap.className = "cap";
+      cap.textContent = "IMAGE " + (index + 1);
+      box.appendChild(cap);
+    }
+
     var links = document.createElement("p");
     links.className = "links";
     var open = document.createElement("a");
@@ -161,7 +253,7 @@
 
     var fmt = document.createElement("select");
     fmt.setAttribute("aria-label", "file type");
-    [["jpg", "JPG"], ["png", "PNG"], ["webp", "WEBP"]].forEach(function (o) {
+    [["png", "PNG"], ["jpg", "JPG"], ["webp", "WEBP"]].forEach(function (o) {
       var opt = document.createElement("option");
       opt.value = o[0]; opt.textContent = o[1];
       fmt.appendChild(opt);
@@ -180,63 +272,108 @@
     return box;
   }
 
-  function generate() {
+  function setBusy(busy) {
+    controls.forEach(function (c) { c.disabled = busy; });
+    btn.textContent = busy ? "GENERATING..." : "GENERATE";
+    document.getElementById("pbox").classList.toggle("off", busy);
+    document.getElementById("nbox").classList.toggle("off", busy);
+  }
+
+  async function generate() {
     var prompt = input.value.trim();
-    if (!prompt) { out.innerHTML = "<p>type a prompt first.</p>"; return; }
-
-    var count = parseInt(countSel.value, 10) || 1;
-    btn.disabled = true;
-    countSel.disabled = true;
-    out.innerHTML = "";
-    var status = document.createElement("p");
-    status.textContent = "generating " + count + (count === 1 ? " image..." : " images...");
-    out.appendChild(status);
-
-    var jobs = [];
-    for (var i = 0; i < count; i++) {
-      jobs.push(requestOne(prompt).then(
-        function (res) { return { ok: true, res: res }; },
-        function (err) { return { ok: false, msg: err.message }; }
-      ));
-    }
-
-    Promise.all(jobs).then(function (results) {
+    if (!prompt) {
       out.innerHTML = "";
-
-      // Group identical errors so the reason is shown once.
-      var errors = {};
-      results.forEach(function (r) { if (!r.ok) errors[r.msg] = (errors[r.msg] || 0) + 1; });
-      Object.keys(errors).forEach(function (msg) {
-        var p = document.createElement("p");
-        var prefix = count > 1 ? errors[msg] + " of " + count + " failed: " : "failed: ";
-        p.textContent = prefix + msg;
-        out.appendChild(p);
-      });
-
-      results.forEach(function (r, idx) {
-        if (r.ok) out.appendChild(buildResult(r.res, prompt, idx, count));
-      });
-
-      btn.disabled = false;
-      countSel.disabled = false;
-    });
-  }
-
-  function fit() {
-    input.style.height = "auto";
-    input.style.height = input.scrollHeight + "px";
-  }
-
-  btn.addEventListener("click", generate);
-  input.addEventListener("input", fit);
-  window.addEventListener("resize", fit);
-  input.addEventListener("keydown", function (e) {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      if (!btn.disabled) generate();
+      var warn = document.createElement("p");
+      warn.textContent = "type a prompt first.";
+      out.appendChild(warn);
+      return;
     }
+    var negative = negInput.value.trim();
+    var count = parseInt(countSel.value, 10) || 1;
+    var dims = getDims();
+
+    setBusy(true);
+    out.innerHTML = "";
+
+    var progress = document.createElement("div");
+    progress.className = "progress";
+    var msg = document.createElement("p");
+    var segsBox = document.createElement("div");
+    segsBox.className = "segs";
+    var segs = [];
+    for (var s = 0; s < count; s++) {
+      var seg = document.createElement("div");
+      seg.className = "seg";
+      segsBox.appendChild(seg);
+      segs.push(seg);
+    }
+    progress.appendChild(msg);
+    progress.appendChild(segsBox);
+    var results = document.createElement("div");
+    results.className = count === 1 ? "grid single" : "grid";
+    out.appendChild(progress);
+    out.appendChild(results);
+
+    var timer = null;
+    var made = 0;
+    var failure = null;
+
+    try {
+      for (var i = 0; i < count; i++) {
+        segs[i].className = "seg active";
+        var started = Date.now();
+        var label = "Generating image " + (i + 1) + " of " + count + "...";
+        msg.textContent = label;
+        clearInterval(timer);
+        timer = setInterval(function () {
+          msg.textContent = label + " " + Math.floor((Date.now() - started) / 1000) + "s";
+        }, 1000);
+
+        try {
+          var res = await requestOne(prompt, negative, dims);
+          results.appendChild(buildResult(res, prompt, i, count));
+          segs[i].className = "seg done";
+          made++;
+        } catch (err) {
+          segs[i].className = "seg fail";
+          failure = { at: i + 1, message: err.message };
+          break;
+        }
+      }
+    } finally {
+      clearInterval(timer);
+      if (failure) {
+        msg.textContent = "Stopped at image " + failure.at + " of " + count + ": " + failure.message +
+          (made ? " (" + made + " finished)" : "");
+      } else {
+        msg.textContent = "Done. Made " + made + (made === 1 ? " image." : " images.");
+      }
+      setBusy(false);
+    }
+  }
+
+  function fit(el) {
+    el.style.height = "auto";
+    el.style.height = el.scrollHeight + "px";
+  }
+
+  [input, negInput].forEach(function (el) {
+    el.addEventListener("input", function () { fit(el); });
+    el.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (!btn.disabled) generate();
+      }
+    });
   });
-  fit();
+  window.addEventListener("resize", function () { fit(input); fit(negInput); });
+  sizeSel.addEventListener("change", showDims);
+  ratioSel.addEventListener("change", showDims);
+  btn.addEventListener("click", generate);
+
+  showDims();
+  fit(input);
+  fit(negInput);
 </script>
 </body>
 </html>
