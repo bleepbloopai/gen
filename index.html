@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>imagine</title>
+<style>
+  :root { --green: #33ff33; --dim: #1f9a1f; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; background: #000; }
+  body {
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px; font-family: "Courier New", Courier, monospace;
+  }
+  .win {
+    width: 100%; max-width: 640px; max-height: calc(100vh - 32px);
+    display: flex; flex-direction: column;
+    background: #000; border: 1px solid #fff;
+  }
+  .bar {
+    background: #fff; color: #000; padding: 6px 10px;
+    font-size: 14px; font-weight: bold; flex: none;
+  }
+  .body { padding: 16px; overflow-y: auto; color: var(--green); font-size: 15px; line-height: 1.5; }
+  .row { display: flex; gap: 8px; align-items: baseline; }
+  .row label { flex: none; }
+  input {
+    flex: 1; min-width: 0; background: transparent; border: 0; outline: 0;
+    color: var(--green); font: inherit; caret-color: var(--green); padding: 0;
+    border-radius: 0;
+  }
+  input::placeholder { color: var(--dim); }
+  button {
+    margin-top: 12px; background: #000; color: var(--green);
+    border: 1px solid var(--green); font: inherit; padding: 4px 12px;
+    cursor: pointer; border-radius: 0;
+  }
+  button:hover:not(:disabled) { background: var(--green); color: #000; }
+  button:focus-visible { outline: 1px dashed var(--green); outline-offset: 3px; }
+  button:disabled { color: var(--dim); border-color: var(--dim); cursor: default; }
+  #out { margin-top: 16px; }
+  #out p { margin: 0 0 8px; }
+  #out img { display: block; max-width: 100%; height: auto; border: 1px solid var(--green); }
+  #out a { color: var(--green); }
+</style>
+</head>
+<body>
+  <div class="win">
+    <div class="bar">image generator</div>
+    <div class="body">
+      <div class="row">
+        <label for="p">&gt;</label>
+        <input id="p" type="text" placeholder="describe an image" autocomplete="off" autofocus>
+      </div>
+      <button id="go">generate</button>
+      <div id="out"></div>
+    </div>
+  </div>
+
+<script>
+  var input = document.getElementById("p");
+  var btn = document.getElementById("go");
+  var out = document.getElementById("out");
+  var MODEL = "flux";
+
+  function generate() {
+    var prompt = input.value.trim();
+    if (!prompt) { out.innerHTML = "<p>type a prompt first.</p>"; return; }
+
+    var url = "https://gen.pollinations.ai/image/" + encodeURIComponent(prompt) +
+              "?model=" + encodeURIComponent(MODEL) +
+              "&seed=" + Math.floor(Math.random() * 1e6);
+
+    btn.disabled = true;
+    out.innerHTML = "<p>generating...</p>";
+
+    var img = new Image();
+    img.alt = prompt;
+    img.onload = function () {
+      out.innerHTML = "";
+      out.appendChild(img);
+      var p = document.createElement("p");
+      p.style.marginTop = "8px";
+      var a = document.createElement("a");
+      a.href = url; a.target = "_blank"; a.rel = "noopener";
+      a.textContent = "open full size";
+      p.appendChild(a);
+      out.appendChild(p);
+      btn.disabled = false;
+    };
+    img.onerror = function () {
+      out.innerHTML = "<p>the image failed to load. check your connection and try again.</p>";
+      btn.disabled = false;
+    };
+    img.src = url;
+  }
+
+  btn.addEventListener("click", generate);
+  input.addEventListener("keydown", function (e) { if (e.key === "Enter" && !btn.disabled) generate(); });
+</script>
+</body>
+</html>
