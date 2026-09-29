@@ -42,6 +42,13 @@
   #out p { margin: 0 0 8px; }
   #out img { display: block; max-width: 100%; height: auto; border: 1px solid var(--green); }
   #out a { color: var(--green); }
+  .savebar { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
+  .savebar button { margin-top: 0; }
+  select {
+    background: #000; color: var(--green); border: 1px solid var(--green);
+    font: inherit; padding: 4px 8px; border-radius: 0;
+  }
+  select:focus-visible { outline: 1px dashed var(--green); outline-offset: 3px; }
 </style>
 </head>
 <body>
@@ -64,6 +71,26 @@
   var MODEL = "flux";
   var PROXY = "https://snowy-recipe-2e51.bleepbloop-ai.workers.dev"; // paste your worker URL here
 
+  function download(blob, ext) {
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "image." + ext;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  function saveAs(img, original, ext) {
+    if (ext === "jpg") { download(original, "jpg"); return; }
+    var c = document.createElement("canvas");
+    c.width = img.naturalWidth;
+    c.height = img.naturalHeight;
+    c.getContext("2d").drawImage(img, 0, 0);
+    c.toBlob(function (b) {
+      if (b) download(b, ext);
+    }, "image/" + ext, 0.95);
+  }
+
   function generate() {
     var prompt = input.value.trim();
     if (!prompt) { out.innerHTML = "<p>type a prompt first.</p>"; return; }
@@ -75,25 +102,57 @@
     btn.disabled = true;
     out.innerHTML = "<p>generating...</p>";
 
-    var img = new Image();
-    img.alt = prompt;
-    img.onload = function () {
-      out.innerHTML = "";
-      out.appendChild(img);
-      var p = document.createElement("p");
-      p.style.marginTop = "8px";
-      var a = document.createElement("a");
-      a.href = url; a.target = "_blank"; a.rel = "noopener";
-      a.textContent = "open full size";
-      p.appendChild(a);
-      out.appendChild(p);
-      btn.disabled = false;
-    };
-    img.onerror = function () {
-      out.innerHTML = "<p>the image failed to load. check your connection and try again.</p>";
-      btn.disabled = false;
-    };
-    img.src = url;
+    fetch(url)
+      .then(function (r) {
+        if (!r.ok) throw new Error("bad response");
+        return r.blob();
+      })
+      .then(function (blob) {
+        var blobUrl = URL.createObjectURL(blob);
+        var img = new Image();
+        img.alt = prompt;
+        img.onload = function () {
+          out.innerHTML = "";
+          out.appendChild(img);
+          var p = document.createElement("p");
+          p.style.marginTop = "8px";
+
+          var open = document.createElement("a");
+          open.href = blobUrl; open.target = "_blank"; open.rel = "noopener";
+          open.textContent = "open full size";
+
+          p.appendChild(open);
+
+          var fmt = document.createElement("select");
+          fmt.setAttribute("aria-label", "file type");
+          [["jpg","JPG"],["png","PNG"],["webp","WEBP"]].forEach(function (o) {
+            var opt = document.createElement("option");
+            opt.value = o[0]; opt.textContent = o[1];
+            fmt.appendChild(opt);
+          });
+
+          var save = document.createElement("button");
+          save.textContent = "save as";
+          save.onclick = function () { saveAs(img, blob, fmt.value); };
+
+          var row = document.createElement("div");
+          row.className = "savebar";
+          row.appendChild(save);
+          row.appendChild(fmt);
+          p.appendChild(row);
+          out.appendChild(p);
+          btn.disabled = false;
+        };
+        img.onerror = function () {
+          out.innerHTML = "<p>the image failed to load. check your connection and try again.</p>";
+          btn.disabled = false;
+        };
+        img.src = blobUrl;
+      })
+      .catch(function () {
+        out.innerHTML = "<p>the image failed to load. check your connection and try again.</p>";
+        btn.disabled = false;
+      });
   }
 
   btn.addEventListener("click", generate);
