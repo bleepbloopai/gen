@@ -7,13 +7,14 @@
 <style>
   :root { --green: #33ff33; --dim: #1f9a1f; }
   * { box-sizing: border-box; }
-  html, body { height: 100%; margin: 0; background: #000; }
+  html { background: #000; }
   body {
-    display: flex; align-items: center; justify-content: center;
+    margin: 0; min-height: 100vh; min-height: 100dvh;
+    display: flex; background: #000;
     padding: 16px; font-family: "Courier New", Courier, monospace;
   }
   .win {
-    width: 100%; max-width: 640px; max-height: calc(100vh - 32px);
+    width: 100%; max-width: 640px; margin: auto;
     display: flex; flex-direction: column;
     background: #000; border: 1px solid #fff;
   }
@@ -21,15 +22,16 @@
     background: #fff; color: #000; padding: 6px 10px;
     font-size: 14px; font-weight: bold; flex: none;
   }
-  .body { padding: 16px; overflow-y: auto; color: var(--green); font-size: 15px; line-height: 1.5; }
-  .row { display: flex; gap: 8px; align-items: baseline; }
+  .body { padding: 16px; color: var(--green); font-size: 15px; line-height: 1.5; }
+  .row { display: flex; gap: 8px; align-items: flex-start; }
   .row label { flex: none; }
-  input {
+  input, textarea {
     flex: 1; min-width: 0; background: transparent; border: 0; outline: 0;
     color: var(--green); font: inherit; caret-color: var(--green); padding: 0;
     border-radius: 0;
   }
-  input::placeholder { color: var(--dim); }
+  textarea { display: block; resize: none; overflow: hidden; overflow-wrap: anywhere; }
+  input::placeholder, textarea::placeholder { color: var(--dim); }
   button {
     margin-top: 12px; background: #000; color: var(--green);
     border: 1px solid var(--green); font: inherit; padding: 4px 12px;
@@ -39,7 +41,7 @@
   button:focus-visible { outline: 1px dashed var(--green); outline-offset: 3px; }
   button:disabled { color: var(--dim); border-color: var(--dim); cursor: default; }
   #out { margin-top: 16px; }
-  #out p { margin: 0 0 8px; }
+  #out p { margin: 0 0 8px; overflow-wrap: anywhere; }
   #out img { display: block; max-width: 100%; height: auto; border: 1px solid var(--green); }
   #out a { color: var(--green); }
   .savebar { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
@@ -57,7 +59,7 @@
     <div class="body">
       <div class="row">
         <label for="p">&gt;</label>
-        <input id="p" type="text" placeholder="describe an image" autocomplete="off" autofocus>
+        <textarea id="p" rows="1" placeholder="describe an image" autocomplete="off" spellcheck="false" autofocus></textarea>
       </div>
       <button id="go">generate</button>
       <div id="out"></div>
@@ -71,23 +73,30 @@
   var MODEL = "flux";
   var PROXY = "https://snowy-recipe-2e51.bleepbloop-ai.workers.dev"; // paste your worker URL here
 
-  function download(blob, ext) {
+  function fileName(text, ext) {
+    var name = text.replace(/[\\/:*?"<>|\u0000-\u001f]/g, "").replace(/\s+/g, " ").trim().slice(0, 100).trim();
+    name = name.replace(/[. ]+$/, "");
+    return (name || "image") + "." + ext;
+  }
+
+  function download(blob, name) {
     var a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = "image." + ext;
+    a.download = name;
     document.body.appendChild(a);
     a.click();
     a.remove();
   }
 
-  function saveAs(img, original, ext) {
-    if (ext === "jpg") { download(original, "jpg"); return; }
+  function saveAs(img, original, ext, text) {
+    var name = fileName(text, ext);
+    if (ext === "jpg") { download(original, name); return; }
     var c = document.createElement("canvas");
     c.width = img.naturalWidth;
     c.height = img.naturalHeight;
     c.getContext("2d").drawImage(img, 0, 0);
     c.toBlob(function (b) {
-      if (b) download(b, ext);
+      if (b) download(b, name);
     }, "image/" + ext, 0.95);
   }
 
@@ -133,7 +142,7 @@
 
           var save = document.createElement("button");
           save.textContent = "save as";
-          save.onclick = function () { saveAs(img, blob, fmt.value); };
+          save.onclick = function () { saveAs(img, blob, fmt.value, prompt); };
 
           var row = document.createElement("div");
           row.className = "savebar";
@@ -156,7 +165,19 @@
   }
 
   btn.addEventListener("click", generate);
-  input.addEventListener("keydown", function (e) { if (e.key === "Enter" && !btn.disabled) generate(); });
+  function fit() {
+    input.style.height = "auto";
+    input.style.height = input.scrollHeight + "px";
+  }
+  input.addEventListener("input", fit);
+  window.addEventListener("resize", fit);
+  input.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (!btn.disabled) generate();
+    }
+  });
+  fit();
 </script>
 </body>
 </html>
